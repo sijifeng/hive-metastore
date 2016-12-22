@@ -84,9 +84,13 @@ public class HiveJdbcService {
 			}
 
 
-			/*if (list.size() == 0 && append_ds) {//如果该表有ds分区 但是昨天没有数据  那么查询所有日期的前10条数据
+
+			//如果该表有ds分区 但是昨天没有数据  那么查询所有日期的前10条数据  耗时过长 并且很多表数据量大  导致java.sql.SQLException: Error while processing statement: FAILED: Execution Error, return code 2 from org.apache.hadoop.hive.ql.exec.mr.MapRedTask
+			//耗时对比： 不加  总耗时270186   单个最大30000
+			//           加了 总耗时4260214         单个最大483843
+			/*if (list.size() == 0 && append_ds) {
 				closeJdbc(res, ps);
-				ps = getConnection().prepareStatement(originSQL);
+				ps = getConnection().prepareStatement("select * from " + model.getDb() + "." + model.getCatelog() + " order by ds desc limit 10");
 				res = ps.executeQuery();
 
 				columnNum = res.getMetaData().getColumnCount();
@@ -98,7 +102,6 @@ public class HiveJdbcService {
 					}
 					list.add(data);
 				}
-
 			}*/
 
 

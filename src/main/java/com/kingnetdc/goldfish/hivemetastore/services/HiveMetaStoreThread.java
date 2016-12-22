@@ -54,30 +54,38 @@ public class HiveMetaStoreThread implements Runnable {
 
 			if (null != tableNames) {
 				for (String tableName : tableNames) {
-					Table table = thriftService.getTableInfo(dbName, tableName);
 
-					MetaStoreModel model = new MetaStoreModel();
-					model.setP_id(1);
-					model.setType("hive");
-					model.setDb(dbName);
-					model.setCatelog(tableName);
-					model.setStructure(combinationTableField(gson.toJson(table.getSd().getCols()), gson.toJson(table.getPartitionKeys())));
+					try {
+						Table table = thriftService.getTableInfo(dbName, tableName);
 
-					hiveJdbcService.getRecentDataInfo(model, date);
+						MetaStoreModel model = new MetaStoreModel();
+						model.setP_id(1);
+						model.setType("hive");
+						model.setDb(dbName);
+						model.setCatelog(tableName);
+						model.setStructure(combinationTableField(gson.toJson(table.getSd().getCols()), gson.toJson(table.getPartitionKeys())));
 
-					/*model.setData(data);
-					model.setUsetime(1l);*/
-					model.setLastupdate(new Timestamp(System.currentTimeMillis()));
+						hiveJdbcService.getRecentDataInfo(model, date);
+
+						/*model.setData(data);
+						model.setUsetime(1l);*/
+						model.setLastupdate(new Timestamp(System.currentTimeMillis()));
 
 
-					if (null != tableMap.get(tableName)) {
-						hiveService.updateMetaStore(model);
-						// 已存在 更新
-					} else {
-						hiveService.addMetaStore(model);
-						// 新增
+						if (null != tableMap.get(tableName)) {
+							hiveService.updateMetaStore(model);
+							// 已存在 更新
+						} else {
+							hiveService.addMetaStore(model);
+							// 新增
+						}
+
+					} catch (Throwable e) {
+						logger.error(String.format("update dbName %s , table %s error, Exception : %s", dbName, tableName, e));
+					} finally {
+						tableMap.remove(tableName);
 					}
-					tableMap.remove(tableName);
+
 				}
 
 				// tableMap 中剩下的都是 说明在hive 中已经删除的数据表  需要删除MySQL中的记录
@@ -87,15 +95,13 @@ public class HiveMetaStoreThread implements Runnable {
 			}
 
 		} catch (ConfigurationException e) {
-			logger.error(e+"");
+			logger.error(e + "");
 		} catch (TTransportException e) {
-			logger.error(e+"");
-		} catch (NoSuchObjectException e) {
-			logger.error(e+"");
+			logger.error(e + "");
 		} catch (TException e) {
-			logger.error(e+"");
+			logger.error(e + "");
 		} catch (Throwable e) {
-			logger.error(e+"");
+			logger.error(e + "");
 		} finally {
 			if (null != thriftService) {
 				thriftService.free();
@@ -104,7 +110,7 @@ public class HiveMetaStoreThread implements Runnable {
 			if (null != hiveJdbcService) {
 				hiveJdbcService.freeConnection();
 			}
-			logger.info("数据库 ["+dbName+"] 完成元数据更新");
+			logger.info("数据库 [" + dbName + "] 完成元数据更新");
 		}
 	}
 
