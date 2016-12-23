@@ -50,7 +50,7 @@ public class HiveJdbcService {
 	}
 
 
-	public String getRecentDataInfo(MetaStoreModel model, String date) throws Exception {
+	public String getRecentDataInfo(MetaStoreModel model, String date, MetaStoreModel origin) throws Exception {
 		ResultSet res = null;
 		PreparedStatement ps = null;
 		String sql = null;
@@ -82,7 +82,6 @@ public class HiveJdbcService {
 				}
 				list.add(data);
 			}
-
 
 
 			//如果该表有ds分区 但是昨天没有数据  那么查询所有日期的前10条数据  耗时过长 并且很多表数据量大  导致java.sql.SQLException: Error while processing statement: FAILED: Execution Error, return code 2 from org.apache.hadoop.hive.ql.exec.mr.MapRedTask
@@ -120,6 +119,10 @@ public class HiveJdbcService {
 			closeJdbc(res, ps);
 		}
 		String data = gson.toJson(json);
+
+		if(0 == list.size() && null != origin) {
+			data = origin.getData();
+		}
 		model.setData(data);
 		return data;
 	}

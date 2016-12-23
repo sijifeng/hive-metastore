@@ -47,9 +47,9 @@ public class HiveMetaStoreThread implements Runnable {
 
 			// 构建目前MySQL中的 table map
 			List<MetaStoreModel> metaStoreModels = hiveService.getMetaStoreByDb(dbName);
-			Map<String, String> tableMap = Maps.newHashMap();
+			Map<String, MetaStoreModel> tableMap = Maps.newHashMap();
 			for (MetaStoreModel model : metaStoreModels) {
-				tableMap.put(model.getCatelog(), model.getCatelog());
+				tableMap.put(model.getCatelog(), model);
 			}
 
 			if (null != tableNames) {
@@ -65,7 +65,7 @@ public class HiveMetaStoreThread implements Runnable {
 						model.setCatelog(tableName);
 						model.setStructure(combinationTableField(gson.toJson(table.getSd().getCols()), gson.toJson(table.getPartitionKeys())));
 
-						hiveJdbcService.getRecentDataInfo(model, date);
+						hiveJdbcService.getRecentDataInfo(model, date, tableMap.get(tableName));
 
 						/*model.setData(data);
 						model.setUsetime(1l);*/
@@ -89,7 +89,7 @@ public class HiveMetaStoreThread implements Runnable {
 				}
 
 				// tableMap 中剩下的都是 说明在hive 中已经删除的数据表  需要删除MySQL中的记录
-				for (Map.Entry<String, String> entry : tableMap.entrySet()) {
+				for (Map.Entry<String, MetaStoreModel> entry : tableMap.entrySet()) {
 					hiveService.deleteMetaStore(dbName, entry.getKey());
 				}
 			}
